@@ -41,7 +41,7 @@ async function run() {
    const productCollection = client.db("farmDb").collection("product");
    const cartCollection = client.db("farmDb").collection("carts");
    const userCollection = client.db("farmDb").collection("users");
-
+const blogCollection = client.db("farmDb").collection("blog");
 
 
 
@@ -147,8 +147,8 @@ async function run() {
       const result = await productCollection.findOne(query);
       res.send(result);
     })
-
-    app.post('/product',verifyToken,verifyAdmin, async (req, res) => {
+//verifyToken,verifyAdmin,
+    app.post('/product', async (req, res) => {
       const item = req.body;
       const result = await productCollection.insertOne(item);
       res.send(result);
@@ -265,6 +265,54 @@ app.delete('/carts/:id', async (req, res) => {
     res.status(500).send({ error: 'Internal server error' });
   }
 });
+
+
+//blog
+
+app.get('/blog', async (req, res) => {
+  const blogs = await blogCollection.find().sort({ _id: -1 }).toArray();
+  res.send(blogs);
+});
+
+// ➕ Add a new blog
+app.post('/blog', async (req, res) => {
+  const blog = { ...req.body, likes: 0, comments: [] };
+  const result = await blogCollection.insertOne(blog);
+  res.send(result);
+});
+
+// ❤️ Like a blog
+app.patch('/blog/:id/like', async (req, res) => {
+  const id = req.params.id;
+  await blogCollection.updateOne(
+    { _id: new ObjectId(id) },
+    { $inc: { likes: 1 } }
+  );
+  const updated = await blogCollection.findOne({ _id: new ObjectId(id) });
+  res.send(updated);
+});
+
+// 💬 Add a comment
+app.patch('/blog/:id/comment', async (req, res) => {
+  const id = req.params.id;
+  const { commenterName, commentText } = req.body;
+
+  const comment = {
+    commenterName,
+    commentText,
+    timestamp: new Date(),
+  };
+
+  await blogCollection.updateOne(
+    { _id: new ObjectId(id) },
+    { $push: { comments: comment } }
+  );
+
+  const updated = await blogCollection.findOne({ _id: new ObjectId(id) });
+  res.send(updated);
+});
+
+
 
 
 //payment 
