@@ -41,7 +41,8 @@ async function run() {
    const productCollection = client.db("farmDb").collection("product");
    const cartCollection = client.db("farmDb").collection("carts");
    const userCollection = client.db("farmDb").collection("users");
-const blogCollection = client.db("farmDb").collection("blog");
+   const blogCollection = client.db("farmDb").collection("blog");
+   const reviewCollection = client.db("farmDb").collection("reviews");
 
 
 
@@ -358,6 +359,33 @@ app.patch('/blog/:id/comment', async (req, res) => {
 
       res.send({ paymentResult, deleteResult });
     })
+
+
+    app.get('/payments', verifyToken, verifyAdmin, async (req, res) => {
+  try {
+    const result = await paymentCollection.find().toArray();
+    res.send(result);
+  } catch (error) {
+    res.status(500).send({ message: 'Failed to fetch payments', error });
+  }
+});
+
+
+
+//review section
+
+// POST review
+app.post('/reviews', async (req, res) => {
+  const review = req.body;
+  const result = await reviewCollection.insertOne(review);
+  res.send(result);
+});
+
+// GET reviews
+app.get('/reviews', async (req, res) => {
+  const result = await reviewCollection.find().sort({ _id: -1 }).toArray();
+  res.send(result);
+});
 
 
 
