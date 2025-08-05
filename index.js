@@ -35,7 +35,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 
  const paymentCollection = client.db("farmDb").collection("payments");
    const productCollection = client.db("farmDb").collection("product");
@@ -43,6 +43,9 @@ async function run() {
    const userCollection = client.db("farmDb").collection("users");
    const blogCollection = client.db("farmDb").collection("blog");
    const reviewCollection = client.db("farmDb").collection("reviews");
+  const noteCollection = client.db("farmDb").collection("notes");
+
+
 
 
 
@@ -180,6 +183,17 @@ app.patch('/product/:id', async (req, res) => {
 });
 
 
+app.get('/seller-products', async (req, res) => {
+  const email = req.query.email;
+
+  if (!email) {
+    return res.status(400).send({ message: 'Email is required' });
+  }
+
+  const query = { authorEmail: email };
+  const result = await productCollection.find(query).toArray();
+  res.send(result);
+});
 
 
 
@@ -536,6 +550,23 @@ app.delete('/seller-requests/:email', async (req, res) => {
 
 
 
+//notes collection 
+
+
+// Route to post a new note
+app.post("/notes", async (req, res) => {
+  const note = req.body;
+  const result = await noteCollection.insertOne(note);
+  res.send(result);
+});
+
+// Route to get all notes for a specific user
+app.get("/notes/:email", async (req, res) => {
+  const email = req.params.email;
+  const result = await noteCollection.find({ email }).sort({ date: -1 }).toArray();
+  res.send(result);
+});
+
 
 
 
@@ -611,8 +642,8 @@ app.delete('/seller-requests/:email', async (req, res) => {
 
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    // await client.db("admin").command({ ping: 1 });
+    // console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
