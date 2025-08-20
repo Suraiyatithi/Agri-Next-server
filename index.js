@@ -44,7 +44,7 @@ async function run() {
    const blogCollection = client.db("farmDb").collection("blog");
    const reviewCollection = client.db("farmDb").collection("reviews");
   const noteCollection = client.db("farmDb").collection("notes");
-
+ const sellerRequestsCollection = client.db("farmDb").collection("sellerRequests");
 
 
 
@@ -82,8 +82,12 @@ async function run() {
       }
       next();
     }
+    //---------------------
 
     // users related api
+
+//-----------------------------
+
     app.get('/users', verifyToken, verifyAdmin, async (req, res) => {
       const result = await userCollection.find().toArray();
       res.send(result);
@@ -108,7 +112,6 @@ async function run() {
     app.post('/users', async (req, res) => {
       const user = req.body;
       // insert email if user doesnt exists: 
-      // you can do this many ways (1. email unique, 2. upsert 3. simple checking)
       const query = { email: user.email }
       const existingUser = await userCollection.findOne(query);
       if (existingUser) {
@@ -138,6 +141,10 @@ async function run() {
     })
 
 
+
+    //-------------------------------
+    //product related api
+    //-------------------------------
 
 
     app.get('/product', async(req, res) =>{
@@ -236,6 +243,15 @@ app.get('/seller-products', async (req, res) => {
 
 
 
+
+
+    //---------------------------------
+    // carts related api
+    //-------------------------------
+
+
+
+
 app.get('/carts', async (req, res) => {
       const email = req.query.email;
       const query = { email: email };
@@ -282,21 +298,26 @@ app.delete('/carts/:id', async (req, res) => {
 });
 
 
+
+//-------------------------------
 //blog
+//---------------------------------
+
+
 
 app.get('/blog', async (req, res) => {
   const blogs = await blogCollection.find().sort({ _id: -1 }).toArray();
   res.send(blogs);
 });
 
-// ➕ Add a new blog
+//  Add a new blog
 app.post('/blog', async (req, res) => {
   const blog = { ...req.body, likes: 0, comments: [] };
   const result = await blogCollection.insertOne(blog);
   res.send(result);
 });
 
-// ❤️ Like a blog
+//  Like a blog
 app.patch('/blog/:id/like', async (req, res) => {
   const id = req.params.id;
   await blogCollection.updateOne(
@@ -307,7 +328,7 @@ app.patch('/blog/:id/like', async (req, res) => {
   res.send(updated);
 });
 
-// 💬 Add a comment
+//  Add a comment
 app.patch('/blog/:id/comment', async (req, res) => {
   const id = req.params.id;
   const { commenterName, commentText } = req.body;
@@ -329,8 +350,11 @@ app.patch('/blog/:id/comment', async (req, res) => {
 
 
 
-
+//-----------------------------
 //payment 
+//-----------------------------
+
+
     app.post('/create-payment-intent', async (req, res) => {
       const { price } = req.body;
       const amount = parseInt(price * 100);
@@ -361,7 +385,6 @@ app.patch('/blog/:id/comment', async (req, res) => {
       const payment = req.body;
       const paymentResult = await paymentCollection.insertOne(payment);
 
-      //  carefully delete each item from the cart
       console.log('payment info', payment);
       const query = {
         _id: {
@@ -385,8 +408,12 @@ app.patch('/blog/:id/comment', async (req, res) => {
 });
 
 
-
+//----------------------------
 //review section
+//---------------------------
+
+
+
 
 // POST review
 app.post('/reviews', async (req, res) => {
@@ -402,8 +429,11 @@ app.get('/reviews', async (req, res) => {
 });
 
 
+//----------------------------
+// stats or analytics
+//----------------------------
 
-  // stats or analytics
+
     app.get('/admin-stats', verifyToken, verifyAdmin, async (req, res) => {
       const users = await userCollection.estimatedDocumentCount();
       const menuItems = await productCollection.estimatedDocumentCount();
@@ -484,11 +514,11 @@ app.get('/reviews', async (req, res) => {
     })
 
 
-
+//-----------------------------------
     //seller role
     // GET role by email
-
-    const sellerRequestsCollection = client.db("farmDb").collection("sellerRequests");
+//-----------------------------------
+   
 
 app.get('/users/role/:email', async (req, res) => {
     const email = req.params.email;
@@ -520,6 +550,10 @@ app.post('/seller-requests', async (req, res) => {
 //     const result = await usersCollection.updateOne(filter, updateDoc);
 //     res.send(result);
 // });
+
+
+
+
 app.patch('/users/make-seller/:email', async (req, res) => {
     const email = req.params.email;
     console.log("Incoming make-seller request for:", email);
@@ -549,8 +583,10 @@ app.delete('/seller-requests/:email', async (req, res) => {
 
 
 
-
+//---------------------------
 //notes collection 
+//--------------------------
+
 
 
 // Route to post a new note
