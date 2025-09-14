@@ -1,8 +1,13 @@
+require("dotenv").config();
+const admin = require("./firebaseadmin");
+
 const express=require('express');
 const app=express();
+
 const cors=require('cors');
 const jwt = require('jsonwebtoken');
-require('dotenv').config();
+
+//require('dotenv').config();
 
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
@@ -133,12 +138,56 @@ async function run() {
       res.send(result);
     })
 
-    app.delete('/users/:id', verifyToken, verifyAdmin, async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: new ObjectId(id) }
-      const result = await userCollection.deleteOne(query);
-      res.send(result);
-    })
+    // app.delete('/users/:id', verifyToken, verifyAdmin, async (req, res) => {
+    //   const id = req.params.id;
+    //   const query = { _id: new ObjectId(id) }
+    //   const result = await userCollection.deleteOne(query);
+    //   res.send(result);
+    // })
+
+
+//   app.delete("/users/:email", async (req, res) => {
+//   try {
+//     const email = req.params.email;
+
+//     // 1. Delete from MongoDB
+//     const result = await userCollection.deleteOne({ email });
+
+//     // 2. Delete from Firebase
+//     const userRecord = await admin.auth().getUserByEmail(email);
+//     await admin.auth().deleteUser(userRecord.uid);
+
+//     res.send({ success: true, message: "User deleted from MongoDB & Firebase" });
+//   } catch (error) {
+//     console.error("Error deleting user:", error);
+//     res.status(500).send({ success: false, message: error.message });
+//   }
+// });
+
+app.delete("/users/:email", async (req, res) => {
+  try {
+    const email = req.params.email; // this is now a proper string
+
+    console.log("Deleting user with email:", email);
+
+    // Delete from MongoDB
+    const result = await userCollection.deleteOne({ email });
+    if (result.deletedCount === 0) {
+      return res.status(404).send({ success: false, message: "User not found in MongoDB" });
+    }
+
+    // Delete from Firebase
+    const userRecord = await admin.auth().getUserByEmail(email);
+    await admin.auth().deleteUser(userRecord.uid);
+
+    res.send({ success: true, message: "User deleted from MongoDB & Firebase" });
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    res.status(500).send({ success: false, message: error.message });
+  }
+});
+
+
 
 
 
